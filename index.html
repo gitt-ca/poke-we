@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokedex</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script src="Vibrant.min.js"></script>
+    <div class="cont-1" id="pokemon-container">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vibrant.js/2.1.0/Vibrant.min.js"></script>
+    <script>
+        async function fetchPokemonData(i) {
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${i}`);
+            const data = await response.json();
+            return data;
+        }
+
+        async function displayPokemonData() {
+            const container = document.getElementById('pokemon-container');
+            for (let i = 1; i <= 150; i++) {
+                const pokemonData = await fetchPokemonData(i);
+                const pokemonElement = document.createElement('div');
+                pokemonElement.classList.add('pokemon-card');
+                const pokeSprite = pokemonData.sprites.front_default;
+                
+                // Pegar cor predominante com o Vibrant
+                const vibrantColor = await getDominantColor(pokeSprite).catch(error => {
+                    console.error(error);
+                    return "#ffffff"; // Retorna branco em caso de erro
+                });
+                
+                pokemonElement.style.backgroundColor = vibrantColor;
+                
+                pokemonElement.innerHTML = `
+                    <h2>${pokemonData.name}</h2>
+                    <img src="${pokeSprite}" alt="${pokemonData.name}">
+                    `;
+                container.appendChild(pokemonElement);
+            }
+        }
+
+        displayPokemonData();
+
+        function getDominantColor(imageUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = imageUrl;
+                img.onload = () => {
+                    const vibrant = new Vibrant(img);
+                    const swatches = vibrant.swatches();
+                    const vibrantSwatch = swatches["Vibrant"] || swatches["Muted"] || swatches["Dominant"];
+                    if (vibrantSwatch) {
+                        resolve(vibrantSwatch.getHex());
+                    } else {
+                        reject("Não foi possível extrair a cor predominante.");
+                    }
+                };
+                img.onerror = () => {
+                    reject("Erro ao carregar a imagem.");
+                };
+            });
+        }
+    </script>
+</body>
+</html>
